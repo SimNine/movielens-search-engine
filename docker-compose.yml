@@ -9,6 +9,8 @@ services:
     volumes:
       - devmysqldb:/var/lib/mysql
       - ./db/sql:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306" # allow connection from docker host
     
   backend:
     build: backend-python
