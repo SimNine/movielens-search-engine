@@ -11,7 +11,7 @@ db = pymysql.connect(
     user="root",
     password="testpass",
     host="db",
-    database="challenge",
+    database="movielens",
 )
 
 
@@ -25,6 +25,16 @@ def test():
 
 @app.cli.command("load-movielens")
 def load_movielens():
+    # check if dataset is not already initialized
+    click.echo(f"check if dataset is not already initialized")
+    with db.cursor() as cur:
+        cur.execute("SELECT data_initialized FROM state;")
+        (is_initialized,) = cur.fetchone()
+        click.echo(f"result {is_initialized}")
+
+    if is_initialized:
+        return
+
     # pull the movielens dataset
     click.echo("attempting to pull movielens dataset")
     URL = "https://files.grouplens.org/datasets/movielens/ml-latest-small.zip"
@@ -41,10 +51,10 @@ def load_movielens():
     click.echo("decompressed movielens dataset")
 
     # load the dataset into mariadb
-    with db.cursor() as cur:
-        cur.execute("SELECT col FROM test;")
-        (result,) = cur.fetchone()
-        click.echo(f"result {result}")
+    # with db.cursor() as cur:
+    #     cur.execute("SELECT col FROM test;")
+    #     (result,) = cur.fetchone()
+    #     click.echo(f"result {result}")
 
     # clean up downloaded and extracted files
     click.echo("attempting to remove movielens files")

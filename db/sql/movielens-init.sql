@@ -32,4 +32,13 @@ CREATE TABLE movielens.ratings (
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=latin1
-COLLATE=latin1_swedish_ci
+COLLATE=latin1_swedish_ci;
+
+CREATE TABLE movielens.state (
+	data_initialized BOOL NOT NULL
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_general_ci;
+
+INSERT INTO movielens.state (data_initialized) VALUES(0);
