@@ -10,14 +10,20 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
+
+import MovieResults from './MovieResults';
 
 class App extends Component {
+
   constructor(props) {
     super(props);
+
+    this.movieMode = "movies";
+    this.userMode = "users";
+
     this.state = {
       currentSearchTerm: "<default>",
-      currentSearchMode: "movies",
+      currentSearchMode: this.movieMode,
       resultRows: []
     };
   }
@@ -47,6 +53,17 @@ class App extends Component {
   }
 
   render = () => {
+    let resultsTable
+    if (this.state.currentSearchMode == this.movieMode) {
+      resultsTable = <MovieResults resultRows={this.state.resultRows} />
+    } else if (this.state.currentSearchMode == this.userMode) {
+      resultsTable = <MovieResults resultRows={this.state.resultRows} />
+    } else {
+      resultsTable = <MovieResults />
+    }
+
+    let pages = [1, 2, 3, 4, 5]
+
     return (
       <div>
         <h1>Movie search:</h1>
@@ -59,8 +76,8 @@ class App extends Component {
             label="Mode"
             onChange={this.changeSearchMode}
           >
-            <MenuItem value={"movies"}>Movies</MenuItem>
-            <MenuItem value={"users"}>Users</MenuItem>
+            <MenuItem value={this.movieMode}>Movies</MenuItem>
+            <MenuItem value={this.userMode}>Users</MenuItem>
           </Select>
         </FormControl>
         <FormControl sx={{ m: 1, minWidth: 120 }}>
@@ -74,7 +91,8 @@ class App extends Component {
           />
         </FormControl>
         
-        <TableContainer>
+        {resultsTable}
+        {/* <TableContainer>
           <Table aria-label="simple table">
             <TableHead>
               <TableRow>
@@ -91,8 +109,12 @@ class App extends Component {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </TableContainer> */}
         {/* <pre>state = {JSON.stringify(this.state, undefined, '  ')}</pre> */}
+
+        {pages.map((num) => {
+          
+        })}
       </div>
     );
   }

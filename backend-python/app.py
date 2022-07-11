@@ -6,6 +6,8 @@ import zipfile
 import os
 import shutil
 import csv
+import logging
+import traceback
 
 app = flask.Flask(__name__)
 db = pymysql.connect(
@@ -31,18 +33,23 @@ def ping():
 
 @app.route("/search")
 def search():
-    # ret = flask.jsonify(dict(result="500: no data", backend="python"))
-
     page = flask.request.args.get('page', default = 1, type = int)
     mode = flask.request.args.get('mode', default = 'movies', type = str)
     term = flask.request.args.get('term', default = "*", type = str)
     items_per_page = 10
+
     if mode == "movies":
         with db.cursor() as cur:
             query = f"SELECT * FROM movielens.movies WHERE (title LIKE '%{term}%') LIMIT {items_per_page} OFFSET {items_per_page * (page - 1)};"
             click.echo(f"searching for movie with title: {term}")
             click.echo(f"using query: {query}")
-            cur.execute(query)
+            try:
+                cur.execute(query)
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                while not db.open:
+                    db.ping(reconnect=True)
+
             results = cur.fetchall()
             click.echo(f"results: {results}")
 
@@ -61,6 +68,17 @@ def search():
             return flask.jsonify(dict(result=result_dict, backend="python"))
     else:
         return flask.jsonify(dict(result="mode not supported", backend="python"))
+
+
+def sql_select_query(query):
+    with db.cursor() as cur:
+        try:
+            cur.execute(query)
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            while not db.open:
+                db.ping(reconnect=True)
+    return cur.fetchall()
 
 
 @app.cli.command("load-movielens")
@@ -156,3 +174,4 @@ def clear_database():
         cur.execute(f"DELETE FROM tags;")
         cur.execute("UPDATE movielens.state SET value_bool=0 WHERE `parameter`='data_initialized';")
     db.commit()
+
