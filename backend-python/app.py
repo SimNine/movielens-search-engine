@@ -19,9 +19,48 @@ db = pymysql.connect(
 @app.route("/test")
 def test():
     with db.cursor() as cur:
-        cur.execute("SELECT col FROM test;")
+        cur.execute("SELECT (`value_bool`) FROM movielens.state WHERE `parameter` = 'data_initialized';")
         (result,) = cur.fetchone()
         return flask.jsonify(dict(result=result, backend="python"))
+
+
+@app.route("/ping")
+def ping():
+    return flask.jsonify(dict(result="200", backend="python"))
+
+
+@app.route("/search")
+def search():
+    # ret = flask.jsonify(dict(result="500: no data", backend="python"))
+
+    page = flask.request.args.get('page', default = 1, type = int)
+    mode = flask.request.args.get('mode', default = 'movies', type = str)
+    term = flask.request.args.get('term', default = "*", type = str)
+    items_per_page = 10
+    if mode == "movies":
+        with db.cursor() as cur:
+            query = f"SELECT * FROM movielens.movies WHERE (title LIKE '%{term}%') LIMIT {items_per_page} OFFSET {items_per_page * (page - 1)};"
+            click.echo(f"searching for movie with title: {term}")
+            click.echo(f"using query: {query}")
+            cur.execute(query)
+            results = cur.fetchall()
+            click.echo(f"results: {results}")
+
+            def convert_movie_row(row):
+                row_dict = dict(
+                    movieId=row[0],
+                    imdbId=row[1],
+                    tmdbId=row[2],
+                    title=row[3],
+                    genres=row[4]
+                )
+                return row_dict
+
+            result_dict = list(map(convert_movie_row, results))
+            click.echo(f"converted results: {result_dict}")
+            return flask.jsonify(dict(result=result_dict, backend="python"))
+    else:
+        return flask.jsonify(dict(result="mode not supported", backend="python"))
 
 
 @app.cli.command("load-movielens")
