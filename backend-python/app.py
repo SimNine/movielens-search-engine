@@ -27,9 +27,34 @@ def test():
         return flask.jsonify(dict(result=result, backend="python"))
 
 
-@app.route("/ping")
-def ping():
-    return flask.jsonify(dict(result="200", backend="python"))
+# @app.route("/ping")
+# def ping():
+#     return flask.jsonify(dict(result="200", backend="python"))
+
+
+def convert_movie_row(row):
+    row_dict = dict(
+        movieId=row[0],
+        imdbId=row[1],
+        tmdbId=row[2],
+        title=row[3],
+        genres=row[4]
+    )
+    return row_dict
+
+
+@app.route("/movie")
+def movie():
+    movie_id = flask.request.args.get('movieId', default = "0", type = str)
+
+    query = f"SELECT * FROM movielens.movies WHERE (movieId = '{movie_id}');"
+    click.echo(f"Gettin film page wiht query: {query}")
+    result = sql_select_query(query)
+    if len(result) == 0:
+        return "invalid movieId"
+    result = convert_movie_row(result[0])
+    click.echo(result)
+    return result
 
 
 @app.route("/search")
@@ -45,16 +70,6 @@ def search():
         click.echo(f"using query: {query}")
 
         results = sql_select_query(query)
-
-        def convert_movie_row(row):
-            row_dict = dict(
-                movieId=row[0],
-                imdbId=row[1],
-                tmdbId=row[2],
-                title=row[3],
-                genres=row[4]
-            )
-            return row_dict
 
         result_dict = list(map(convert_movie_row, results))
         # click.echo(f"converted results: {result_dict}")

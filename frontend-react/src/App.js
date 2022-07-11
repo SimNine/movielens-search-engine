@@ -35,7 +35,8 @@ class App extends Component {
       resultDataRows: [],
       resultNumPages: 0,
       resultNumResults: 0,
-      resultCurrPage: 1
+      resultCurrPage: 1,
+      currentMovie: {}
     };
   }
 
@@ -99,6 +100,7 @@ class App extends Component {
 
     return (
       <div>
+        {/* SEARCH BAR */}
         <h1>Movie search:</h1>
         <FormControl sx={{ m: 1, minWidth: 120 }}>
           <InputLabel id="demo-simple-select-label">Mode</InputLabel>
@@ -124,8 +126,11 @@ class App extends Component {
           />
         </FormControl>
         
+        {/* RESULTS */}
         <h2>Num results: {this.state.resultNumResults}</h2>
         {resultsTable}
+
+        {/* PAGINATION */}
         <div>
           <IconButton aria-label="first" color="primary" disabled={this.state.resultCurrPage <= 1}
               onClick={() => {
@@ -178,24 +183,6 @@ class App extends Component {
               }}>
             <SkipNextIcon />
           </IconButton>
-          {/* {Array.from(Array(this.state.resultNumPages > this.maxNumPages ? this.maxNumPages : this.state.resultNumPages), (e, i) => {
-            i += 1;
-            let buttonKey = "pageButton" + (i + 1);
-            if (i == this.state.resultCurrPage) {
-              return <Button key={buttonKey} variant="contained" style={{ fontWeight: 600 }}>{i}</Button>
-            }
-            return <Button 
-              key={buttonKey} 
-              variant="outlined" 
-              style={{ fontWeight: 600 }}
-              onClick={() => {
-                this.setState({
-                  resultCurrPage: i
-                }, this.refreshResults);
-            }}>
-              {i}
-            </Button>
-          })} */}
         </div>
       </div>
     );
