@@ -8,6 +8,7 @@ import shutil
 import csv
 import logging
 import traceback
+import math
 
 app = flask.Flask(__name__)
 db = pymysql.connect(
@@ -39,33 +40,36 @@ def search():
     items_per_page = 10
 
     if mode == "movies":
-        with db.cursor() as cur:
-            query = f"SELECT * FROM movielens.movies WHERE (title LIKE '%{term}%') LIMIT {items_per_page} OFFSET {items_per_page * (page - 1)};"
-            click.echo(f"searching for movie with title: {term}")
-            click.echo(f"using query: {query}")
-            try:
-                cur.execute(query)
-            except Exception as e:
-                logging.error(traceback.format_exc())
-                while not db.open:
-                    db.ping(reconnect=True)
+        query = f"SELECT * FROM movielens.movies WHERE (title LIKE '%{term}%') LIMIT {items_per_page} OFFSET {items_per_page * (page - 1)};"
+        # click.echo(f"searching for movie with title: {term}")
+        click.echo(f"using query: {query}")
 
-            results = cur.fetchall()
-            click.echo(f"results: {results}")
+        results = sql_select_query(query)
 
-            def convert_movie_row(row):
-                row_dict = dict(
-                    movieId=row[0],
-                    imdbId=row[1],
-                    tmdbId=row[2],
-                    title=row[3],
-                    genres=row[4]
-                )
-                return row_dict
+        def convert_movie_row(row):
+            row_dict = dict(
+                movieId=row[0],
+                imdbId=row[1],
+                tmdbId=row[2],
+                title=row[3],
+                genres=row[4]
+            )
+            return row_dict
 
-            result_dict = list(map(convert_movie_row, results))
-            click.echo(f"converted results: {result_dict}")
-            return flask.jsonify(dict(result=result_dict, backend="python"))
+        result_dict = list(map(convert_movie_row, results))
+        # click.echo(f"converted results: {result_dict}")
+
+        query = f"SELECT COUNT(*) FROM movielens.movies WHERE (title LIKE '%{term}%');"
+        num_results = sql_select_query(query)[0][0]
+        num_pages = math.ceil(num_results / items_per_page)
+
+        return flask.jsonify(dict(
+            result=result_dict, 
+            backend="python", 
+            num_pages=num_pages, 
+            num_results=num_results
+            )
+        )
     else:
         return flask.jsonify(dict(result="mode not supported", backend="python"))
 

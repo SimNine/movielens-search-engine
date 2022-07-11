@@ -4,12 +4,19 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 
 import MovieResults from './MovieResults';
 
@@ -20,33 +27,43 @@ class App extends Component {
 
     this.movieMode = "movies";
     this.userMode = "users";
+    this.maxNumPages = 9;
 
     this.state = {
       currentSearchTerm: "<default>",
       currentSearchMode: this.movieMode,
-      resultRows: []
+      resultDataRows: [],
+      resultNumPages: 0,
+      resultNumResults: 0,
+      resultCurrPage: 1
     };
   }
 
   changeSearchTerm = (e) => {
     this.setState({
-      currentSearchTerm: e.target.value
+      currentSearchTerm: e.target.value,
+      resultCurrPage: 1
     }, this.refreshResults);
   };
 
   changeSearchMode = (e) => {
     this.setState({
-      currentSearchMode: e.target.value
+      currentSearchMode: e.target.value,
+      resultCurrPage: 1
     }, this.refreshResults);
   };  
 
   refreshResults = () => {
-    fetch('/search?mode=' + this.state.currentSearchMode + '&term='+ this.state.currentSearchTerm).then((res) => {
+    fetch('/search?mode=' + this.state.currentSearchMode + '&term='+ this.state.currentSearchTerm + '&page=' + this.state.resultCurrPage).then((res) => {
       return res.json();
     }).then((res) => {
       this.setState({
-        resultRows: res.result
+        resultDataRows: res.result,
+        resultNumPages: res.num_pages,
+        resultNumResults: res.num_results
       });
+      console.log(res.num_pages)
+      console.log(res.num_results)
     }).catch((err) => {
       this.setState({err});
     });
@@ -55,14 +72,30 @@ class App extends Component {
   render = () => {
     let resultsTable
     if (this.state.currentSearchMode == this.movieMode) {
-      resultsTable = <MovieResults resultRows={this.state.resultRows} />
+      resultsTable = <MovieResults resultRows={this.state.resultDataRows} />
     } else if (this.state.currentSearchMode == this.userMode) {
-      resultsTable = <MovieResults resultRows={this.state.resultRows} />
+      resultsTable = <MovieResults resultRows={this.state.resultDataRows} />
     } else {
       resultsTable = <MovieResults />
     }
 
-    let pages = [1, 2, 3, 4, 5]
+    let pageArrayMin, pageArrayMax
+    if (this.state.resultNumPages <= this.maxNumPages ||
+        this.state.resultCurrPage <= Math.floor(this.maxNumPages / 2)) {
+      // 9 pages, bottom of range
+      pageArrayMin = 1
+      pageArrayMax = this.resultNumPages
+    } else if (this.state.resultCurrPage >= this.state.resultNumPages - Math.floor(this.maxNumPages / 2)) {
+      // 9 pages, top of range
+      pageArrayMin = this.state.resultNumPages - this.maxNumPages + 1
+      pageArrayMax = this.state.resultNumPages
+    } else {
+      // middle of range
+      pageArrayMin = this.state.resultCurrPage - Math.floor(this.maxNumPages / 2)
+      pageArrayMax = this.state.resultCurrPage + Math.floor(this.maxNumPages / 2)
+    }
+
+    let pageNumArray = Array.from(new Array(this.state.resultNumPages <= this.maxNumPages ? this.state.resultNumPages : this.maxNumPages), (x, i) => i + pageArrayMin);
 
     return (
       <div>
@@ -91,30 +124,79 @@ class App extends Component {
           />
         </FormControl>
         
+        <h2>Num results: {this.state.resultNumResults}</h2>
         {resultsTable}
-        {/* <TableContainer>
-          <Table aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell style={{ fontWeight: 600 }}>Title</TableCell>
-                <TableCell style={{ fontWeight: 600 }} align="right">Genre</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {this.state.resultRows.map((row) => (
-                <TableRow key={row.title}>
-                  <TableCell component="th" scope="row">{row.title}</TableCell>
-                  <TableCell align="right">{row.genres}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer> */}
-        {/* <pre>state = {JSON.stringify(this.state, undefined, '  ')}</pre> */}
-
-        {pages.map((num) => {
-          
-        })}
+        <div>
+          <IconButton aria-label="first" color="primary" disabled={this.state.resultCurrPage <= 1}
+              onClick={() => {
+                this.setState({
+                  resultCurrPage: 1
+                }, this.refreshResults);
+              }}>
+            <SkipPreviousIcon />
+          </IconButton>
+          <IconButton aria-label="previous" color="primary" disabled={this.state.resultCurrPage <= 1}
+              onClick={() => {
+                this.setState({
+                  resultCurrPage: this.state.resultCurrPage - 1
+                }, this.refreshResults);
+              }}>
+            <ArrowLeftIcon />
+          </IconButton>
+          {Array.from(pageNumArray, (e, i) => {
+            let buttonKey = "pageButton" + e;
+            if (e == this.state.resultCurrPage) {
+              return <Button key={buttonKey} variant="contained" style={{ fontWeight: 600 }}>{e}</Button>
+            }
+            return <Button 
+              key={buttonKey} 
+              variant="outlined" 
+              style={{ fontWeight: 600 }}
+              onClick={() => {
+                this.setState({
+                  resultCurrPage: e
+                }, this.refreshResults);
+              }}>
+              {e}
+            </Button>
+          })}
+          <IconButton aria-label="next" color="primary" 
+              disabled={this.state.resultCurrPage >= this.state.resultNumPages}
+              onClick={() => {
+                this.setState({
+                  resultCurrPage: this.state.resultCurrPage + 1
+                }, this.refreshResults);
+              }}>
+            <ArrowRightIcon />
+          </IconButton>
+          <IconButton aria-label="last" color="primary" 
+              disabled={this.state.resultCurrPage >= this.state.resultNumPages}
+              onClick={() => {
+                this.setState({
+                  resultCurrPage: this.state.resultNumPages
+                }, this.refreshResults);
+              }}>
+            <SkipNextIcon />
+          </IconButton>
+          {/* {Array.from(Array(this.state.resultNumPages > this.maxNumPages ? this.maxNumPages : this.state.resultNumPages), (e, i) => {
+            i += 1;
+            let buttonKey = "pageButton" + (i + 1);
+            if (i == this.state.resultCurrPage) {
+              return <Button key={buttonKey} variant="contained" style={{ fontWeight: 600 }}>{i}</Button>
+            }
+            return <Button 
+              key={buttonKey} 
+              variant="outlined" 
+              style={{ fontWeight: 600 }}
+              onClick={() => {
+                this.setState({
+                  resultCurrPage: i
+                }, this.refreshResults);
+            }}>
+              {i}
+            </Button>
+          })} */}
+        </div>
       </div>
     );
   }
