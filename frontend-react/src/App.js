@@ -6,12 +6,6 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
@@ -71,12 +65,15 @@ class App extends Component {
   }
 
   render = () => {
+    // determine whether to show the movie results table or the user results table
     let resultsTable
     if (this.state.currentSearchMode == this.movieMode) {
       resultsTable = <MovieResults resultRows={this.state.resultDataRows} />
     } else if (this.state.currentSearchMode == this.userMode) {
-      resultsTable = <MovieResults resultRows={this.state.resultDataRows} />
+      // TODO: implement user results table
+      // resultsTable = <MovieResults resultRows={this.state.resultDataRows} />
     } else {
+      // default
       resultsTable = <MovieResults />
     }
 
